@@ -1,0 +1,12 @@
+  WAVEFORMATEX wave_format = {0};
+  
+  wave_format.wFormatTag = WAVE_FORMAT_PCM;
+  wave_format.nChannels = 1;
+  wave_format.wBitsPerSample = 16;
+  wave_format.nSamplesPerSec = 44100;
+  wave_format.nBlockAlign = 
+      wave_format.nChannels * wave_format.wBitsPerSample / 8;
+  wave_format.nAvgBytesPerSec = 
+      wave_format.nSamplesPerSec * wave_format.nBlockAlign;
+  wave_format.cbSize = 0;
+  MMRESULT mm_rt = waveOutOpen(&handle_waveout, WAVE_MAPPER, &wave_format, 0, 0, CALLBACK_NULL);

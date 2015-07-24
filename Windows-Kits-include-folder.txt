@@ -1,0 +1,15 @@
+windows kits 开发包，include 目录里有三个子文件夹：
+
+shared
+shared - While there seem to be some exceptions this likely contains headers shared between user mode and kernel mode.
+
+um
+um stands for "user mode"
+um - Contains the usual Windows header files: Windows.h & co. "um" likely comes from "user mode"
+
+winrt
+winrt - Contains the header files for the WinRT API (aka Windows Store).
+WinRT files are specific to the Windows Runtime
+Windows Runtime，或WinRT，是Windows 8中的一种跨平台应用程序架构。
+WinRT支持的开发语言包括C++（一般包括C++/CX）和托管语言C#和VB.NET，还有JavaScript。
+WinRT应用程序同时原生支持x86架构和ARM架构，同时为了更好的安全性和稳定性，也支持运行在沙盒环境中

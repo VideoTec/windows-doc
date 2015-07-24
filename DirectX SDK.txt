@@ -1,0 +1,671 @@
+http://blogs.msdn.com/b/chuckw/archive/2013/07/01/where-is-the-directx-sdk-2013-edition.aspx
+The DirectX SDK (June 2010) is still available as the last release of the standalone DirectX SDK
+We recommend using the Windows 8.x SDK instead of the DirectX SDK, 
+or at a minimum using the Windows 8.x SDK primarily with only specific usages of the legacy DirectX SDK
+
+DirectX的诞生：
+DOS允许直接访问显卡、键盘、鼠标、声卡以及其他系统硬件设施。
+而Windows 95出于保护存储系统的目的，限制了对硬件的直接访问，取而代之的是一套更加规范标准的访问方法。
+微软需要一种方法让程序员在WIN95中也能编写出高效的程序。此时，离新系统发布不到几个月了。
+St. John和Engstrom联合解决了这个问题，他们将解决方案称为DirectX
+
+2002年，微软发布了DirectX 9，它支持最新的顶点阴影着色器2.0版本，
+2004年4月将shader model 3.0（SM 3.0）加入了DirectX 9.0c
+2005年4月，DirectShow从DirectX移除，加入到Microsoft Platform SDK
+2010年6月7日发布的DirectX SDK是最后独立发布的SDK版本。叫做：DirectX SDK (June 2010)）
+最后，DirectX SDK被集成进新版的Microsoft Windows SDK里
+
+
+DirectX 8.0a  最后支持Windows 95的版本
+DirectX 9     最后一个支持WindowsXP的版本                   9.0 9.0a 9.0b 9.0c(xp sp2)
+DirectX 10    Windows Vista及以上的操作系统才支持
+DirectX 11    与Windows 7 RTM一同发布
+DirectX 11.1  是DirectX 11的改进版，随Windows 8出货。
+DirectX 11.2  是DirectX 11.1的改进版，随Windows 8.1出货
+###############
+##
+## 总结DIRECT3D的接口
+##
+###############
+IDirect3D9
+IDirect3DDevice9
+IDirect3DVertexBuffer9
+###############
+##
+## 总结 环境
+##
+###############
+#include <d3d9.h> D3d9.lib 或者 #include <d3d11_1.h>
+
+fatal error C1083: Cannot open include file: 'd3dx9.h': No such file or directory
+d3dx已经被微软抛弃了，自己实现吧
+You won't be able to use D3DX set of library functions anymore unless you manually install old DX SDK. 
+New one doesn't have them and you should look up the code to load DDS textures manually. 
+Or you can use the new Microsoft library called DirectXTex, which is the replacer for some of the old D3DX functions.
+
+#include <d3dtypes.h> 结构体：D3DLVERTEX v[3];  宏：D3DFVF_LVERTEX
+
+#include <d3d9types.h> 结构体：D3DVECTOR
+
+D3DLVERTEX v[3];
+// Vertex established
+v[0] = D3DLVERTEX(D3DVECTOR(0.f, 5.f, 10.f), 0x00FF0000, 0, 0, 0); //error C2661: '_D3DVECTOR::_D3DVECTOR' : no overloaded function takes 3 arguments
+###############
+##
+## 总结 创建，初始化DirectX接口
+##
+###############
+IDirect3D9 *d3d = Direct3DCreate9(D3D_SDK_VERSION); //The value of this parameter should be D3D_SDK_VERSION.
+The Direct3D object is the first Direct3D COM object that 
+your graphical application needs to create and the last object that your application needs to release.
+
+All rendering devices created by a Direct3D object share the same physical resources. 
+If you create multiple rendering devices from a single Direct3D object, 
+extreme[ɪkˈstri:m]非常的 performance penalties will be incurred[ɪn'kɜ:d] because they share the same hardware
+
+IDirect3DDevice9 *device;
+IDirect3D9::CreateDevice call specifies the default adapter, a hardware abstraction layer (HAL) device, and software vertex processing
+Note that a call to create, release, or reset the device should happen only on the same thread as the window procedure of the focus window.
+D3DPRESENT_PARAMETERS structure that is used to create the Direct3D device. 
+The following code example specifies a windowed application 
+where the back buffer is copied to the front buffer during a vertical sync operation only.
+
+D3DPRESENT_PARAMETERS d3dpp; 
+ZeroMemory( &d3dpp, sizeof(d3dpp) );
+d3dpp.Windowed   = TRUE;
+d3dpp.SwapEffect = D3DSWAPEFFECT_COPY;
+if( FAILED( g_pD3D->CreateDevice( D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, hWnd, D3DCREATE_SOFTWARE_VERTEXPROCESSING, &d3dpp, &d3dDevice ) ) )
+	return E_FAIL;
+###############
+##
+## IDirect3DResource9 两个资源: 都关联一个 设备对象
+## IDirect3DTexture9
+## IDirect3DSurface9
+## 
+###############
+surface是一种资源，包含一个矩形集合的像素数据，如color, alpha, depth/stencil。（类似于OpenGL中的buffer object）
+所有的back buffer都是合理的render target（但是并非所有render target都是back buffer）
+
+创建纹理
+HRESULT hr = g_pd3dDevice->CreateTexture(256, 256, 1, D3DUSAGE_RENDERTARGET, D3DFMT_R5G6B5, D3DPOOL_DEFAULT, &g_pRenderTexture, NULL);
+
+获取纹理的surface
+g_pRenderTexture->GetSurfaceLevel(0, &g_pRenderSurface) ;
+
+// Set texture surface as RenderTarget
+g_pd3dDevice->SetRenderTarget(0, g_pRenderSurface) ;  与激活纹理单元的概念类似
+g_pd3dDevice->Clear( 0, NULL, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER, 0xff0000ff, 1.0f, 0 );
+
+if( SUCCEEDED( g_pd3dDevice->BeginScene() ) )
+{
+     g_pd3dDevice->SetTexture(0, NULL) ;
+
+     g_pd3dDevice->SetRenderState( D3DRS_LIGHTING , FALSE ); 
+     g_pd3dDevice->SetRenderState(D3DRS_FILLMODE, D3DFILL_WIREFRAME) ;
+     g_pTeapotMesh->DrawSubset(0) ; // Draw teapot
+
+     g_pd3dDevice->EndScene();
+}
+
+###############
+##
+## D3D渲染流水线  
+## 物体本地坐标  世界变换，透视变换
+## 光照(着色)、纹理映射、投影
+## 
+###############
+加载数据→多边形→局部坐标→世界坐标→剔除、背面消除→相机坐标→透视坐标 →屏幕坐标
+                                                             │               ↑
+                                                             └→光栅化─┘
+                                                                      ↓
+                                                     光照(着色)、纹理映射、投影
+
+###############
+##
+## SetRenderTarget 什么对象，可以用作target ?
+## SetRenderState  总共有那些state ?
+## 
+###############
+
+g_pd3dDevice->SetRenderTarget(0, g_pRenderSurface) ;  与激活纹理单元的概念类似
+调用Device->GetSurfaceLevel(0, &SurfacePtr );获得Surface指针
+将Surface指针使用Device->SetRenderTarget设置上去即可开始绘制
+
+     g_pd3dDevice->SetRenderState( D3DRS_LIGHTING , FALSE );  //关光照
+	 如果将光照设置为enable（通过D3DRS_LIGHTING=TRUE设置），那么系统会对所有法向量不为0的顶点进行光照计算，即使输入的顶点中包含颜色信息，也将被丢弃
+	 如果将光照设置为disable，那么对于LT格式，将使用顶点自带的颜色信息，而对于其他类型的顶点，将没有光照计算，也就无法显示
+	 所以如果顶点是LT格式的，而且设置了光照为enable，那么模型也是无法显示的，因为LT格式的顶点不包含法向量，没有法向量是无法完成光照计算的
+	 有了光照，有了场景，可是如果场景不在你的视野内，你依然什么都看不见，比如模型绘制在X轴正半轴上，而视线却指向X轴负半轴。
+	 
+	 m_pDevice->SetRenderState(D3DRS_LIGHTING, FALSE);//因为使用顶点颜色渲染，所以要禁用光照处理
+	 m_pDevice->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);//关闭“挑选”功能，允许渲染背面
+	 m_pDevice->SetRenderState(D3DRS_ZENABLE, D3DZB_TRUE);//启用Z缓存，允许消隐处理
+	 m_pDevice->SetRenderState(D3DRS_NORMALIZENORMALS, TRUE);//自动对法线矢量进行归一化处理
+	 
+     g_pd3dDevice->SetRenderState(D3DRS_FILLMODE, D3DFILL_WIREFRAME) ;
+
+###############
+##
+## DrawPrimitive 画一个三角形
+##
+###############
+如何把我们需要的顶点参数（例如坐标，颜色等等）送入后台缓冲？
+
+HRESULT DrawPrimitive(
+  D3DPRIMITIVETYPE PrimitiveType,
+  UINT StartVertex,
+  UINT PrimitiveCount
+);
+g_pd3dDevice->DrawPrimitive(D3DPT_TRIANGLELIST,0,1);
+
+CreateVertexBuffer vs SetFVF
+
+###############
+##
+## 纹理坐标，以(0, 0)为左上角
+## 顶点坐标，以(, 0,)为中心点。在D3DFVF_XYZ时。
+###############
+
+###############
+##
+## directX 顶点坐标定义  Flexible([美][ˈflɛksəbəl]灵活的) Vertex Format Constants, or FVF codes
+## D3DFVF_XYZRHW 坐标取值范围？
+##
+###############
+#include <d3d9types.h>
+
+指明是否需要：利用Direct3D内部的所有变换和光线操作
+指名坐标系
+指名是否有纹理
+
+LT格式的顶点不包含法向量
+
+// Flexible vertex format bits
+//
+#define D3DFVF_RESERVED0        0x001
+#define D3DFVF_POSITION_MASK    0x400E
+#define D3DFVF_XYZ              0x002    顶点数据需要“变换”
+#define D3DFVF_XYZRHW           0x004    顶点数据，已经，“变换” 且 “光照”
+#define D3DFVF_XYZB1            0x006
+#define D3DFVF_XYZB2            0x008
+#define D3DFVF_XYZB3            0x00a
+#define D3DFVF_XYZB4            0x00c
+#define D3DFVF_XYZB5            0x00e
+#define D3DFVF_XYZW             0x4002
+
+#define D3DFVF_NORMAL           0x010    顶点数据需要“光照” Vertex format includes a vertex normal vector
+                                         D3DFVF_NORMAL是代表向量,
+                                         顶点法向量	
+                                         忽略顶点法向量会使; Direct3D认为顶点已经经过了光线处理	
+                                         g_d3d_device->SetRenderState(D3DRS_LIGHTING, FALSE);	 //关光照									 
+#define D3DFVF_PSIZE            0x020
+#define D3DFVF_DIFFUSE          0x040    
+#define D3DFVF_SPECULAR         0x080    [美]['spekjələ]镜子的，镜面反射颜色
+
+#define D3DFVF_TEXCOUNT_MASK    0xf00
+#define D3DFVF_TEXCOUNT_SHIFT   8
+#define D3DFVF_TEX0             0x000
+#define D3DFVF_TEX1             0x100
+#define D3DFVF_TEX2             0x200
+#define D3DFVF_TEX3             0x300
+#define D3DFVF_TEX4             0x400
+#define D3DFVF_TEX5             0x500
+#define D3DFVF_TEX6             0x600
+#define D3DFVF_TEX7             0x700
+#define D3DFVF_TEX8             0x800
+
+#define D3DFVF_LASTBETA_UBYTE4   0x1000
+#define D3DFVF_LASTBETA_D3DCOLOR 0x8000
+
+#define D3DFVF_RESERVED2         0x6000  // 2 reserved bits
+
+使用方法：
+1. 定义一个宏，用于标志，自定义顶点类型。
+#define D3DFVF_CUSTOMVERTEX (D3DFVF_XYZRHW|D3DFVF_DIFFUSE|D3DFVF_TEX1)
+2. 定义一个数据结构，用于自定义顶点类型
+    struct CUSTOMVERTEX
+    {
+        FLOAT x, y, z, rhw; // The transformed position for the vertex.
+        DWORD color;        // The vertex color.
+        FLOAT u, v;
+    };
+重点问题：
+D3DFVF_XYZ和D3DFVF_XYZRHW的区别
+重点，类型解释：
+D3DFVF_XYZ （三个float值）
+顶点的三维坐标，表示有位置，而且会由Direct3D进行矩阵变换
+Vertex format includes the position of an untransformed vertex.
+This flag cannot be used with the D3DFVF_XYZRHW flag.
+Direct3D将执行视、投影、世界等变换以及进行光线计算
+D3DFVF_XYZ默认的用户区中心坐标是（0，0）
+D3DFVF_XYZ默认的为非光照的
+
+在描述顶点时使用D3DFVF_XYZ和D3DFVF_NORMAL标志，就表示渲染方法将使用untransformed和unlit顶点类型（系统都要执行：光线和变换计算）
+如果在描述顶点格式时包含了D3DFVF_XYZ标志，而没有包含D3DFVF_NORMAL标志，那么就表示程序中的顶点没有经过变换，但是已经经过了光线处理（系统不执行光线计算，系统执行变换运算）
+
+D3DFVF_XYZRHW  （四个float值） 格式是(x,y,z,1/w)，RHW是指W的倒数
+D3DFVF_XYZRHW是左上角为（0，0）
+D3DFVF_XYZRHW是高洛德光照
+Vertex format includes the position of a transformed vertex.
+This flag cannot be used with the D3DFVF_XYZ or D3DFVF_NORMAL flags.
+在描述顶点格式时使用 D3DFVF_XYZRHW 标志，就表示程序将使用transformed和lit顶点。
+对于顶点，Direct3D不再执行世界、观察和透视变换，也不再进行光线运算；
+它会认为顶点已经经过了这些处理（在立即模式输入已有的3-D程序时，场使用这种顶点。）；并直接将顶点传递给驱动器进行光栅操作
+不再执行视图、投影、世界等变换和光线计算，直接将顶点进行光栅操作
+任何用SetTransform进行的转换都对其无效
+这时的原点就在客户区的左上角了，其中x向右为正，y向下为正，而z的意义已经变为z-buffer的象素深度
+x、y必须在屏幕坐标系中
+
+D3DFVF_XYZRHW 坐标取值范围
+原点就在客户区的左上角了，其中x向右为正，y向下为正
+x、y必须在屏幕坐标系中
+
+z必须是z-buffer中的象素深度，
+取值范围：0.0－1.0，
+离观察者最近的地方为0.0，观察范围内最远可见的地方为1.0（z不起作用）
+
+D3DFVF_DIFFUSE 见《物体材质和光的反射》
+Vertex format includes a diffuse([美][dɪˈfjuz]散开的) color component
+表示顶点格式中有漫反射颜色(只反射指定的颜色？指的灯光的颜色？)
+物体对光的反射属性来表达一个物体的材质的
+金属的物体和塑料的物体对光的反射会有不同的反射效果
+
+D3DFVF_TEX1     (0 - 8)
+Number of texture coordinate sets for this vertex. 
+The actual values for these flags are not sequential([sɪˈkwɛnʃəl]按次序的).
+
+###############
+##
+## 物体材质和光的反射 光照
+## 物体表面的颜色由自发射光(emissive)、环境光(ambient)、漫反射光(diffuse)以及镜面高光(specular)
+## 漫反射光通常指方向光在物体表面不同方向的反射光
+##
+###############
+并且在D3D中定义了如下的结构，来描述一个物体的材质：
+在现实世界中，我们所观察到的物体的颜色是由该物体所反射的光决定的。
+例如，一个黄色的茶壶，反射了全部的黄色入射光，并吸收了所有非黄色的光，所以该茶壶显示为黄色
+
+typedef struct _D3DMATERIAL8 {
+    D3DCOLORVALUE Diffuse; // 对漫射光的反射
+    D3DCOLORVALUE Ambient; // 对环境光的反射
+    D3DCOLORVALUE Specular; // 顶点高光   指定表面反射的镜面光 
+    D3DCOLORVALUE Emissive; // 顶点放射光 表面本身自发光  
+    float Power; // 描述顶点高光亮的程度  镜面高光
+} D3DMATERIAL8;
+
+3种光源。
+1.点光源(Point lights),2. 方向光(Directional lights),3.聚光灯(Spot lights)
+
+###############
+##
+## FVF code  定义一个自定义顶点类型
+## 可变向量格式 (FVF)，可变顶点格式
+##
+## CreateVertexBuffer 创建顶点缓冲区对象
+## IDirect3DVertexBuffer9 填充缓冲区对象
+##
+## SetStreamSource 设置流数据源
+##
+###############
+HRESULT SetFVF(
+  [in]  DWORD FVF
+);
+FVF code
+
+struct LVertex
+{
+    FLOAT    x, y, z;
+    D3DCOLOR specular, diffuse;
+    FLOAT    tu, tv;
+};    
+const DWORD VertexFVF = (D3DFVF_XYZ | D3DFVF_DIFFUSE |
+                         D3DFVF_SPECULAR | D3DFVF_TEX1 );
+
+struct CUSTOMVERTEX
+{
+    FLOAT x, y, z, rhw; // The transformed position for the vertex.
+    DWORD color;        // The vertex color.
+};
+#define D3DFVF_CUSTOMVERTEX (D3DFVF_XYZRHW|D3DFVF_DIFFUSE)
+可变顶点格式标记描述了使用中的自定义顶点类型。
+前述示例代码使用了 D3DFVF_XYZRHW 和 D3DFVF_DIFFUSE 标志，这将告诉顶点缓冲，
+自定义顶点类型包含一组转换过的点坐标并紧跟着一个颜色参数
+CUSTOMVERTEX g_Vertices[] =
+{
+    { 150.0f,  50.0f, 0.5f, 1.0f, 0xffff0000, }, // x, y, z, rhw, color
+    { 250.0f, 250.0f, 0.5f, 1.0f, 0xff00ff00, },
+    {  50.0f, 250.0f, 0.5f, 1.0f, 0xff00ffff, },
+};
+g_pd3dDevice->CreateVertexBuffer( 
+      3*sizeof(CUSTOMVERTEX),
+      0 /* Usage */, D3DFVF_CUSTOMVERTEX,
+      D3DPOOL_DEFAULT, &g_pVB ) // 少了个参数，最后一个值
+
+g_pVB->Lock( 0, sizeof(g_Vertices), (BYTE**)&pVertices, 0 );
+memcpy(pVertices, g_Vertices, sizeof(g_Vertices));
+g_pVB->Unlock();
+
+g_pd3dDevice->SetStreamSource( 0, g_pVB, sizeof(CUSTOMVERTEX) ); // 少了个参数：g_d3d_device->SetStreamSource(0, vertex_buffer, 0, sizeof(CUSTOMVERTEX));
+
+g_pd3dDevice->SetVertexShader( D3DFVF_CUSTOMVERTEX ); //将FVF设置为当前顶点处理器(顶点着色器)，这样设置，不行。
+                                                      //通过setFVF 按照我的理解 就是告诉shader 他要处理的vertices里面的格式
+g_pd3dDevice->DrawPrimitive( D3DPT_TRIANGLELIST, 0, 1 ); //画图
+g_pd3dDevice->Present( NULL, NULL, NULL, NULL ); //后背缓冲被提交为前景缓冲
+
+D3D8中是用g_pD3DDevice->SetVertexShader(D3DFVF_CUSTOMVERTEX);
+D3D9中是用g_pD3DDevice->SetFVF(D3DFVF_CUSTOMVERTEX);
+没区别，但是9中的SetVertexShader专门设置可编程渲染管道的Shader程序，而SetFVF设置固定渲染管道的顶点格式。
+###############
+##
+## 固定渲染管道 可编程渲染管道
+##
+###############
+Direct3D 8.0引进了可编程管道（Programable Function Pipeline）的概念，Direct3D在8.0版以前只能工作在固定管道（Fixed Function Pipe-line）的模式下
+2001年微软正式发表的Direct3D 8.0支持处理顶点的Vertex Shader，以及处理像素的Pixel Shader。
+使Direct3D的技术正式超越劲敌OpenGL。DirectX 8中的着色器是用低级着色器语言（Low Level Shading Language）编写的
+
+Direct3D 9.0使用HLSL（全称High Level Shading Language）编写Vertex Shader和Pixel Shader[5]，有助于着色器的编写和所产生代码的效率，并且大幅地缩短设计时间
+
+从OpenGL3.2开始，固定渲染的功能逐渐地被废弃
+
+光照等计算都是用硬件实现, 程序员只能通过D3D的API去设置渲染状态等参数而不能修改基本算法, 所以叫做固定管线
+
+direct3d9 接口定义：
+To set a fixed-function vertex shader (after having set a programmable vertex shader), 
+call IDirect3DDevice9::SetVertexShader(NULL) to release the programmable shader, 
+and then call IDirect3DDevice9::SetFVF with the fixed-function vertex format.
+###############
+##
+## Direct3D_Render（）函数需要些的渲染五步曲
+##
+###############
+1. 渲染五步曲之一：清屏操作
+g_pd3dDevice->Clear(0, NULL, D3DCLEAR_TARGET, D3DCOLOR_XRGB(0, 0, 0), 1.0f, 0);
+
+2. 渲染五步曲之二：开始场景
+g_pd3dDevice->BeginScene();
+
+3. 渲染五步曲之三：正式绘制
+4. 渲染五步曲之四：结束场景
+g_pd3dDevice->EndScene(); 
+
+5. 渲染五步曲之五：翻转显示
+g_pd3dDevice->Present(NULL, NULL, NULL, NULL);  // 翻转与显示 执行完成后返回。结束会立即显示出来。
+###############
+##
+## HLSL 着色器代码(shader)
+## http://blog.itpub.net/14466241/viewspace-662268/
+###############
+SetPixelShader Compile( ShaderTarget, ShaderFunction );
+SetGeometryShader Compile( ShaderTarget, ShaderFunction );
+SetVertexShader Compile( ShaderTarget, ShaderFunction );
+
+m_pDevice->CreatePixelShader((DWORD*)Code->GetBufferPointer(), &m_pPixelShader);   
+m_pDevice->CreateVertexShader((DWORD*)Code->GetBufferPointer(), &m_pVertexShader); 
+
+m_pDevice->SetPixelShader(m_pPixelShader);   
+m_pDevice->SetVertexShader(m_pVertexShader);
+
+
+D3DXCompileShaderFromFile 
+
+D3DXCompileShaderFromFile("BasicHLSL.txt", //着色器代码文件名
+                                                  0,
+                                                  0,
+                                                  "SetColor", //入口函数名称
+                                                  "vs_1_1", //顶点着色器版本号
+                                                  D3DXSHADER_DEBUG,// Debug模式编译      
+                                                  &shaderBuffer, //指向编译后的着色器代码的指针
+                                                  &errorBuffer,
+                                                  &BasicConstTable); //常量表指针
+g_pd3dDevice->CreateVertexShader((DWORD*)shaderBuffer->GetBufferPointer(), &BasicShader);
+g_pd3dDevice->SetVertexShader(BasicShader);  //把 顶点着色器设定到渲染管道中
+###############
+##
+## IDirect3DSurface9 和 IDirect3DTexture9 IDirect3DVertexBuffer9 IDirect3DPixelShader9
+## 纹理，顶点缓存，Surface，着色器
+##
+## Direct3D的抽象概念包括：devices, swap chains和resources
+##
+###############
+m_pDevice->CreateOffscreenPlainSurface(width, height, format , D3DPOOL_DEFAULT, &m_pOffsceenSurface, NULL)
+m_pTexture->GetSurfaceLevel(0, &m_pTextureSurface)
+m_pDevice->CreateTexture(width, height, 1, D3DUSAGE_RENDERTARGET, m_displayMode.Format, D3DPOOL_DEFAULT, &m_pTexture, NULL)
+m_pDevice->CreateVertexBuffer(sizeof(VERTEX) * 4, D3DUSAGE_DYNAMIC | D3DUSAGE_WRITEONLY, D3DFVF_CUSTOMVERTEX, D3DPOOL_DEFAULT, &m_pVertexBuffer, NULL)
+
+每一个设备至少要有一个swap chain.一个swap chain可用来产生一个或多个back buffer surfaces
+
+pitch
+The width and height are measured in pixels. The pitch is measured in bytes. 
+The pitch maybe wider than the width
+Pitch >= Width · sizeof(pixelFormat) 
+
+每个纹理都有一个surface（m_pTexture->GetSurfaceLevel获取）。
+surface可以做为一个RenderTarget，用于direct3d绘制。
+In D3D, all drawing is done to a surface. 
+Texture itself is a special kind of surface which can have several embedded surfaces.
+
+LockRect: This method allows us to obtain a pointer to the surface memory. Then, 
+with some pointer arithmetic, we can read and write to each pixel in the surface. 
+
+• UnlockRect: After you have called LockRect and are done accessing the surface’s 
+memory, you must unlock the surface by calling this method. 
+
+• GetDesc: This method retrieves a description of the surface by filling out a 
+D3DSURFACE_DESC structure
+
+A surface is nothing more than a area of memory in which you can store graphical information
+The images and pixels that you see on screen (or displayed in a window) are stored in a surface. 
+A surface represents a linear area of display memory and usually resides in the display memory of the display card, although surfaces can exist in system memory. 
+Front Buffer. A rectangle of memory that is translated by the graphics adapter and displayed on the monitor. In Direct3D an application never writes directly to the front buffer.
+Back Buffer. A rectangle of memory that an application can directly write to. The back buffer is never directly displayed on the monitor.
+
+Flipping surfaces. The process of moving the back buffer to the front buffer.
+Swap chain. A collection of one or more back buffers that can be serially presented to the front buffer.
+Direct3D通常创建2~3个表面组成一个集合，即为交换链，通常由IDirect3DSwapChain接口来表示
+
+Textures are a powerful tool in creating realism in computer-generated 3D images. Direct3D supports an extensive texturing feature set, providing developers with easy access to advanced texturing techniques.
+
+//创建纹理，并加载（上传），纹理数据
+http://stackoverflow.com/questions/6447261/write-bitmapinfoheader-image-data-to-idirect3dtexture9
+m_pD3DTexture->LockRect(0, &lock, NULL, 0)
+IDirect3DTexture9  D3DLOCKED_RECT bmp
+
+E:\opensource\DDSTextureLoader\DDSTextureLoader.cpp
+pDev->CreateTexture( iWidth, iHeight, (level)iMipCount, (Usage)0, fmt, D3DPOOL_DEFAULT, &pTexture, NULL );
+pDev->CreateTexture( iWidth, iHeight, iMipCount, 0, fmt, D3DPOOL_SYSTEMMEM, &pStagingTexture, NULL );
+Number of levels in the texture：iMipCount 0
+Usage can be 0, which indicates no usage value. 
+D3DFORMAT : D3DFMT_A8R8G8B8  col.c = 0xFF884422  -> 内存中存储是： 224488FF
+D3DPOOL （内存池）（这个参数，和usage相关）：指定内存类型，D3DPOOL_DEFAULT（This is usually video memory）
+Video memory textures cannot be locked, but must be modified by calling IDirect3DDevice9::UpdateSurface or IDirect3DDevice9::UpdateTexture. 
+Textures created with D3DPOOL_DEFAULT are not lockable. Textures created in video memory are lockable when created with USAGE_DYNAMIC.
+This method cannot retrieve data from a texture resource created with D3DUSAGE_RENDERTARGET because such a texture must be assigned to D3DPOOL_DEFAULT memory and is therefore not lockable. 
+In this case, use instead IDirect3DDevice9::GetRenderTargetData to copy texture data from device memory to system memory.
+
+SetTexture 不能使用：D3DPOOL_SYSTEMMEM texture
+SetTexture is not allowed if the texture is created with a pool type of D3DPOOL_SCRATCH. 
+SetTexture is not allowed with a pool type of D3DPOOL_SYSTEMMEM texture unless DevCaps is set with D3DDEVCAPS_TEXTURESYSTEMMEMORY.
+
+pStagingTexture->LockRect( i, &LockedRect, NULL, 0 );
+BYTE* pDestBits = ( BYTE* )LockedRect.pBits;
+// Copy stride line by line
+for( UINT h = 0; h < NumRows; h++ )
+{
+    memcpy_s( pDestBits, LockedRect.Pitch, pSrcBits, RowBytes );
+    pDestBits += LockedRect.Pitch;
+    pSrcBits += RowBytes;
+}
+pStagingTexture->UnlockRect( i );
+
+pDev->UpdateTexture( pStagingTexture, pTexture );
+
+渲染操作是将场景送至backbuffer，
+而backbuffer实际上是一个Surface，
+而纹理恰恰又包含了Surface，所以我们只需要取得纹理的Surface，
+其次将其【场景】送至这个Surface，最后再把这个纹理渲染到backbuffer中即可
+
+Device->CreateTexture 创建纹理
+调用Device->GetSurfaceLevel(0, &SurfacePtr );获得Surface指针
+将Surface指针使用Device->SetRenderTarget设置上去即可开始绘制
+
+g_pd3dDevice->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
+g_pd3dDevice->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_LINEAR);
+g_pd3dDevice->SetSamplerState(0, D3DSAMP_MIPFILTER, D3DTEXF_LINEAR);
+g_pd3dDevice->SetSamplerState(0, D3DSAMP_ADDRESSU, D3DTADDRESS_WRAP );
+g_pd3dDevice->SetSamplerState(0, D3DSAMP_ADDRESSV, D3DTADDRESS_WRAP );
+
+###############
+##
+## D3DFORMAT rgba 颜色的字节序 D3DFMT_A8R8G8B8 按照一个整数值来命名的如：0xaarrggbb
+## AV_PIX_FMT_ARGB, AV_PIX_FMT_RGBA, AV_PIX_FMT_ABGR, AV_PIX_FMT_BGRA, 按照字节序来命名的
+## 
+###############
+以红色为例： 0xffff0000
+                  由低位到高位
+D3DFMT_A8R8G8B8   BBGGRRAA 
+
+
+typedef enum _D3DFORMAT
+{
+    D3DFMT_UNKNOWN              =  0,
+
+    D3DFMT_R8G8B8               = 20,
+    D3DFMT_A8R8G8B8             = 21,
+    D3DFMT_X8R8G8B8             = 22,
+    D3DFMT_R5G6B5               = 23,
+    D3DFMT_X1R5G5B5             = 24,
+    D3DFMT_A1R5G5B5             = 25,
+    D3DFMT_A4R4G4B4             = 26,
+    D3DFMT_R3G3B2               = 27,
+    D3DFMT_A8                   = 28,
+    D3DFMT_A8R3G3B2             = 29,
+    D3DFMT_X4R4G4B4             = 30,
+    D3DFMT_A2B10G10R10          = 31,
+    D3DFMT_A8B8G8R8             = 32,
+    D3DFMT_X8B8G8R8             = 33,
+    D3DFMT_G16R16               = 34,
+    D3DFMT_A2R10G10B10          = 35,
+    D3DFMT_A16B16G16R16         = 36,
+
+    D3DFMT_A8P8                 = 40,
+    D3DFMT_P8                   = 41,
+
+    D3DFMT_L8                   = 50,
+    D3DFMT_A8L8                 = 51,
+    D3DFMT_A4L4                 = 52,
+
+    D3DFMT_V8U8                 = 60,
+    D3DFMT_L6V5U5               = 61,
+    D3DFMT_X8L8V8U8             = 62,
+    D3DFMT_Q8W8V8U8             = 63,
+    D3DFMT_V16U16               = 64,
+    D3DFMT_A2W10V10U10          = 67,
+
+    D3DFMT_UYVY                 = MAKEFOURCC('U', 'Y', 'V', 'Y'),
+    D3DFMT_R8G8_B8G8            = MAKEFOURCC('R', 'G', 'B', 'G'),
+    D3DFMT_YUY2                 = MAKEFOURCC('Y', 'U', 'Y', '2'),
+    D3DFMT_G8R8_G8B8            = MAKEFOURCC('G', 'R', 'G', 'B'),
+    D3DFMT_DXT1                 = MAKEFOURCC('D', 'X', 'T', '1'),
+    D3DFMT_DXT2                 = MAKEFOURCC('D', 'X', 'T', '2'),
+    D3DFMT_DXT3                 = MAKEFOURCC('D', 'X', 'T', '3'),
+    D3DFMT_DXT4                 = MAKEFOURCC('D', 'X', 'T', '4'),
+    D3DFMT_DXT5                 = MAKEFOURCC('D', 'X', 'T', '5'),
+
+    D3DFMT_D16_LOCKABLE         = 70,
+    D3DFMT_D32                  = 71,
+    D3DFMT_D15S1                = 73,
+    D3DFMT_D24S8                = 75,
+    D3DFMT_D24X8                = 77,
+    D3DFMT_D24X4S4              = 79,
+    D3DFMT_D16                  = 80,
+
+    D3DFMT_D32F_LOCKABLE        = 82,
+    D3DFMT_D24FS8               = 83,
+
+/* D3D9Ex only -- */
+#if !defined(D3D_DISABLE_9EX)
+
+    /* Z-Stencil formats valid for CPU access */
+    D3DFMT_D32_LOCKABLE         = 84,
+    D3DFMT_S8_LOCKABLE          = 85,
+
+#endif // !D3D_DISABLE_9EX
+/* -- D3D9Ex only */
+
+
+    D3DFMT_L16                  = 81,
+
+    D3DFMT_VERTEXDATA           =100,
+    D3DFMT_INDEX16              =101,
+    D3DFMT_INDEX32              =102,
+
+    D3DFMT_Q16W16V16U16         =110,
+
+    D3DFMT_MULTI2_ARGB8         = MAKEFOURCC('M','E','T','1'),
+
+    // Floating point surface formats
+
+    // s10e5 formats (16-bits per channel)
+    D3DFMT_R16F                 = 111,
+    D3DFMT_G16R16F              = 112,
+    D3DFMT_A16B16G16R16F        = 113,
+
+    // IEEE s23e8 formats (32-bits per channel)
+    D3DFMT_R32F                 = 114,
+    D3DFMT_G32R32F              = 115,
+    D3DFMT_A32B32G32R32F        = 116,
+
+    D3DFMT_CxV8U8               = 117,
+
+/* D3D9Ex only -- */
+#if !defined(D3D_DISABLE_9EX)
+
+    // Monochrome 1 bit per pixel format
+    D3DFMT_A1                   = 118,
+
+    // 2.8 biased fixed point
+    D3DFMT_A2B10G10R10_XR_BIAS  = 119,
+
+
+    // Binary format indicating that the data has no inherent type
+    D3DFMT_BINARYBUFFER         = 199,
+    
+#endif // !D3D_DISABLE_9EX
+/* -- D3D9Ex only */
+
+
+    D3DFMT_FORCE_DWORD          =0x7fffffff
+} D3DFORMAT;
+
+###############
+##
+## SDL C语言 创建D3D对象
+##
+###############
+D3D_LoadDLL(&data->d3dDLL, &data->d3d)
+
+SDL_bool D3D_LoadDLL( void **pD3DDLL, IDirect3D9 **pDirect3D9Interface )
+{
+	*pD3DDLL = SDL_LoadObject("D3D9.DLL");
+	if (*pD3DDLL) {
+		IDirect3D9 *(WINAPI * D3DCreate) (UINT SDKVersion);
+
+		D3DCreate =
+			(IDirect3D9 * (WINAPI *) (UINT)) SDL_LoadFunction(*pD3DDLL,
+			"Direct3DCreate9");
+		if (D3DCreate) {
+			*pDirect3D9Interface = D3DCreate(D3D_SDK_VERSION);
+		}
+		if (!*pDirect3D9Interface) {
+			SDL_UnloadObject(*pD3DDLL);
+			*pD3DDLL = NULL;
+			return SDL_FALSE;
+		}
+
+		return SDL_TRUE;
+	} else {
+		*pDirect3D9Interface = NULL;
+		return SDL_FALSE;
+	}
+}

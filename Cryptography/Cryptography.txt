@@ -1,0 +1,26 @@
+Wincrypt.h
+Advapi32.lib Advapi32.dll
+
+https://msdn.microsoft.com/en-us/library/windows/desktop/aa380255(v=vs.85).aspx
+
+Purpose
+
+Cryptography is the use of codes to convert data so that only a specific recipient will be able to read it, using a key.
+Microsoft cryptographic technologies include CryptoAPI, Cryptographic Service Providers (CSP), CryptoAPI Tools, CAPICOM, WinTrust, issuing and managing certificates, and developing customizable public key infrastructures. Certificate and smart card enrollment, certificate management, and custom module development are also described.
+Developer audience
+
+CryptoAPI is intended for use by developers of Windows-based applications that will enable users to create and exchange documents and other data in a secure environment, especially over nonsecure media such as the Internet. Developers should be familiar with the C and C++ programming languages and the Windows programming environment. Although not required, an understanding of cryptography or security-related subjects is advised.
+CAPICOM is a 32-bit only component that is intended for use by developers who are creating applications using Visual Basic Scripting Edition (VBScript) programming language or the C++ programming language. CAPICOM is available for use in the operating systems specified in Run-Time Requirements. For future development, we recommend that you use the .NET Framework to implement security features. For more information, see Alternatives to Using CAPICOM.
+Run-time requirements
+
+For information about run-time requirements for a particular programming element, see the Requirements section of the reference page for that element.
+
+CAPICOM 2.1.0.2 is supported on the following operating systems and versions:
+Windows Server 2003
+Windows XP
+CAPICOM is available as a redistributable file that can be downloaded from Platform SDK Redistributable: CAPICOM.
+
+Certificate Services requires the following versions of these operating systems:
+Windows Server 2008 R2
+Windows Server 2008
+Windows Server 2003

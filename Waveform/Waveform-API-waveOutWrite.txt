@@ -1,0 +1,37 @@
+向声音播放设备，传递音频数据
+
+The waveOutWrite function sends a data block to the given waveform-audio output device.
+
+MMRESULT waveOutWrite(
+  HWAVEOUT hwo,       Handle to the waveform-audio output device.
+  LPWAVEHDR pwh,      Pointer to a WAVEHDR structure containing information about the data block.
+  UINT cbwh           Size, in bytes, of the WAVEHDR structure.
+);
+
+返回值：MMSYSERR_NOERROR
+
+重要的结构体：
+typedef struct wavehdr_tag {
+  LPSTR              lpData;
+  DWORD              dwBufferLength;
+  DWORD              dwBytesRecorded;
+  DWORD_PTR          dwUser;
+  DWORD              dwFlags;
+  DWORD              dwLoops;
+  struct wavehdr_tag  *lpNext;
+  DWORD_PTR          reserved;
+} WAVEHDR, *LPWAVEHDR;
+
+------------------------------
+使用示例
+------------------------------
+WAVEHDR wave_hdr = { 0 };
+wave_hdr.lpData = buffer;
+wave_hdr.dwBufferLength = data_size;
+mm_rt = waveOutPrepareHeader(handle_waveout, &wave_hdr, sizeof(wave_hdr));
+mm_rt = waveOutWrite(handle_waveout, &wave_hdr, sizeof(wave_hdr));
+
+运行上面的代码，无论给buffer赋什么值，都听不到声音。
+
+原因是：waveOutWrite 执行完后，程序直接退出了，根本来不及播放。
+解决方法：在程序退出前，加上个sleep，等等硬件播放声音。

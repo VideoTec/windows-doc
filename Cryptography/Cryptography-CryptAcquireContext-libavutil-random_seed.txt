@@ -1,0 +1,3 @@
+libavutil.a(random_seed.o) : error LNK2019: 无法解析的外部符号 __imp__CryptAcquireContextA@20，该符号在函数 _av_get_random_seed 中被引用
+libavutil.a(random_seed.o) : error LNK2019: 无法解析的外部符号 __imp__CryptReleaseContext@8，该符号在函数 _av_get_random_seed 中被引用
+libavutil.a(random_seed.o) : error LNK2019: 无法解析的外部符号 __imp__CryptGenRandom@12，该符号在函数 _av_get_random_seed 中被引用

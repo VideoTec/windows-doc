@@ -1,0 +1,36 @@
+-------------------------------------------
+waveOutPrepareHeader
+-------------------------------------------
+
+The waveOutPrepareHeader function prepares a waveform-audio data block for playback.
+
+MMRESULT waveOutPrepareHeader(
+  HWAVEOUT hwo,
+  LPWAVEHDR pwh,
+  UINT cbwh
+);
+返回值 MMSYSERR_NOERROR
+
+-------------------------------------------
+waveOutUnprepareHeader
+-------------------------------------------
+
+The waveOutUnprepareHeader function cleans up the preparation performed by the waveOutPrepareHeader function.
+
+This function 两个必须
+must be called after the device driver is finished with a data block. You 
+must call this function before freeing the buffer.
+
+After passing a buffer to the device driver with the waveOutWrite function, 
+you must wait until the driver is finished with the buffer before calling waveOutUnprepareHeader.
+参考
+Before calling waveOutClose, the application must wait for all buffers to finish playing or call the waveOutReset function to terminate playback.
+
+Unpreparing a buffer that has not been prepared has no effect, and the function returns zero.
+
+MMRESULT waveOutUnprepareHeader(
+  HWAVEOUT hwo,   Handle to the waveform-audio output device.
+  LPWAVEHDR pwh,  Pointer to a WAVEHDR structure identifying the data block to be cleaned up.
+  UINT cbwh       Size, in bytes, of the WAVEHDR structure.
+);
+返回值 MMSYSERR_NOERROR

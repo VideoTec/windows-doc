@@ -1,0 +1,43 @@
+Direct3DCreate9Ex-d3d9.dll.jpg
+无法定位程序输入点 Direct3DCreate9Ex 于动态链接库 d3d9.dll 上
+Note  Direct3DCreate9Ex is supported only in Windows Vista, Windows Server 2008, and Windows 7. Earlier versions of the D3D9.dll library do not include Direct3D9Ex and Direct3DCreate9Ex
+
+
+DirectX版本都保持向下兼容性（即新版本兼容旧版本）
+硬件制造商要为每款硬件产品编写驱动程序来支持DX，
+甚至一些硬件商只编写DX的驱动，
+这意味着要使用这款硬件就必须安装DX，
+早期的DirectX版本自带了所有支持DX硬件的驱动程序，
+后来用户可以通过自动更新系统下载适合的驱动。
+
+一些驱动程序只支持某个版本的DX，DX10之前，
+所有DirectX版本都保持向下兼容性，即新版本兼容旧版本，
+例如安装了DX9的计算机，依然可以运行由DX6编写的代码
+
+Where is the DirectX SDK?
+http://msdn.microsoft.com/en-us/library/windows/desktop/ee663275%28v=vs.85%29.aspx
+
+Direct3D Pipeline
+HLSL is the High Level Shading Language for DirectX. Using HLSL, you can create C like programmable shaders for the Direct3D pipeline.
+
+http://www.directxtutorial.com/
+ffmpegtutorial
+
+http://17de.com/library/d3d_6im/d3dim6_18.htm
+Direct3D支持广泛的纹理特性设置，使程序员可以轻松的访问提供高级纹理技术。下面我们来讨论Direct3D中的纹理的一些内容
+
+
+窗口的不透明度
+窗口的不透明度
+http://msdn.microsoft.com/en-us/library/ms997507.aspx
+
+// Set WS_EX_LAYERED on this window 
+SetWindowLong(hwnd, GWL_EXSTYLE,
+        GetWindowLong(hwnd, GWL_EXSTYLE) | WS_EX_LAYERED);
+// Make this window 70% alpha
+SetLayeredWindowAttributes(hwnd, 0, (255 * 70) / 100, LWA_ALPHA);
+
+
+
+Using a singleton across DLL boundary
+Is there a way to use the same instance between the DLL and the hosting process? (let's assume that binary compatibility is not an issue

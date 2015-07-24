@@ -1,0 +1,157 @@
+Mmsystem.h (include Windows.h)
+Winmm.lib
+
+-----------------------
+打开 并 初始化
+-----------------------
+
+
+###############
+##
+## 例子设计
+##
+###############
+原始的PCM数据流文件
+waveOutOpen(&waveout_handle, WAVE_MAPPER, &fmt, 0, 0, CALLBACK_NULL);
+waveOutPrepareHeader(waveout_handle, &wave_hdr, sizeof(wave_hdr));
+waveOutWrite(waveout_handle, &wave_hdr, sizeof(WAVEHDR));
+
+附带研究：
+1）c++线程
+2）c++ i/o
+###############
+##
+## SDL 内部声音接口
+##
+###############
+    impl->DetectDevices = WINMM_DetectDevices;
+    impl->OpenDevice = WINMM_OpenDevice;
+    impl->PlayDevice = WINMM_PlayDevice;
+    impl->WaitDevice = WINMM_WaitDevice;
+    impl->WaitDone = WINMM_WaitDone;
+    impl->GetDeviceBuf = WINMM_GetDeviceBuf;
+    impl->CloseDevice = WINMM_CloseDevice;
+	
+	void (*DetectDevices) (int iscapture, SDL_AddAudioDevice addfn);
+    int (*OpenDevice) (_THIS, const char *devname, int iscapture);
+    void (*ThreadInit) (_THIS); /* Called by audio thread at start */
+    void (*WaitDevice) (_THIS);
+    void (*PlayDevice) (_THIS);
+    Uint8 *(*GetDeviceBuf) (_THIS);
+    void (*WaitDone) (_THIS);
+    void (*CloseDevice) (_THIS);
+    void (*LockDevice) (_THIS);
+    void (*UnlockDevice) (_THIS);
+    void (*Deinitialize) (void);
+
+###############
+##
+## 参考资料
+##
+###############
+Waveform Audio  #include <mmsystem.h>
+Posts a message to 'PlaybackThreadProc' everytime a WaveOut Buffer is completed and returns to the application (for more data)
+static void CALLBACK WaveOutProc(HWAVEOUT UNUSED(device), UINT msg, DWORD_PTR instance, DWORD_PTR param1, DWORD_PTR UNUSED(param2))
+waveOutOpen(&data->WaveHandle.Out, DeviceID, &data->Format, (DWORD_PTR)&WaveOutProc, (DWORD_PTR)Device, CALLBACK_FUNCTION)
+单独的线程里，不断调用这个函数，来播放声音
+waveOutWrite(this->hidden->hout, &this->hidden->wavebuf[this->hidden->next_buffer], sizeof(this->hidden->wavebuf[0]));
+C:\Users\wangxiangfx\Downloads\SDL2-2.0.3\src\audio\winmm\SDL_winmm.c
+C:\Users\wangxiangfx\Downloads\openal-soft-1.16.0\Alc\backends\winmm.c
+
+struct SDL_PrivateAudioData
+{
+    HWAVEOUT hout;
+    HWAVEIN hin;
+    HANDLE audio_sem;
+    Uint8 *mixbuf;              /* The raw allocated mixing buffer */
+    WAVEHDR wavebuf[NUM_BUFFERS];       /* Wave audio fragments */
+    int next_buffer;
+};
+
+
+MMDevice API
+#include <mmdeviceapi.h>
+#include <audioclient.h>
+C:\Users\wangxiangfx\Downloads\openal-soft-1.16.0\Alc\backends\mmdevapi.c
+###############
+##
+## 总结 环境
+##
+###############
+Mmsystem.h (include Windows.h)
+Winmm.lib
+Windows 2000 Professional [desktop apps only]
+
+注释：
+mmsyscom.h -- Commonm Include file for Multimedia API's
+其中MM代表：Multimedia
+###############
+##
+## 总结 数据类型
+##
+###############
+MMRESULT 返回值类型：
+MMSYSERR_NOERROR
+
+HWAVEOUT 声音输出设备句柄
+WAVEFORMATEX
+
+MMSYSERR_NOERROR  0
+/* waveform audio error return values */
+#define WAVERR_BADFORMAT      (WAVERR_BASE + 0)    /* unsupported wave format */    32
+#define WAVERR_STILLPLAYING   (WAVERR_BASE + 1)    /* still something playing */
+#define WAVERR_UNPREPARED     (WAVERR_BASE + 2)    /* header not prepared */
+#define WAVERR_SYNC           (WAVERR_BASE + 3)    /* device is synchronous */
+#define WAVERR_LASTERROR      (WAVERR_BASE + 3)    /* last error in range */
+
+/* waveform audio data types */
+DECLARE_HANDLE(HWAVE);
+DECLARE_HANDLE(HWAVEIN);
+DECLARE_HANDLE(HWAVEOUT);
+typedef HWAVEIN FAR *LPHWAVEIN;
+typedef HWAVEOUT FAR *LPHWAVEOUT;
+typedef DRVCALLBACK WAVECALLBACK;
+typedef WAVECALLBACK FAR *LPWAVECALLBACK;
+
+/* wave callback messages */
+#define WOM_OPEN        MM_WOM_OPEN
+#define WOM_CLOSE       MM_WOM_CLOSE
+#define WOM_DONE        MM_WOM_DONE
+#define WIM_OPEN        MM_WIM_OPEN
+#define WIM_CLOSE       MM_WIM_CLOSE
+#define WIM_DATA        MM_WIM_DATA
+
+/* device ID for wave device mapper */
+#define WAVE_MAPPER     ((UINT)-1)
+
+typedef struct wavehdr_tag {
+  LPSTR              lpData;
+  DWORD              dwBufferLength;
+  DWORD              dwBytesRecorded;
+  DWORD_PTR          dwUser;
+  DWORD              dwFlags;
+  DWORD              dwLoops;
+  struct wavehdr_tag  *lpNext;
+  DWORD_PTR          reserved;
+} WAVEHDR, *LPWAVEHDR;
+
+/* flags for dwFlags field of WAVEHDR */
+#define WHDR_DONE       0x00000001  /* done bit */
+#define WHDR_PREPARED   0x00000002  /* set if this header has been prepared */
+#define WHDR_BEGINLOOP  0x00000004  /* loop start block */
+#define WHDR_ENDLOOP    0x00000008  /* loop end block */
+#define WHDR_INQUEUE    0x00000010  /* reserved for driver */
+
+###############
+##
+## 总结 接口
+##
+###############
+分为录音接口和播放接口
+waveOutOpen
+waveInOpen
+
+waveOutPrepareHeader function prepares a waveform-audio data block for playback
+播放之前（waveOutWrite）调用这个接口。
+调用接口前要设置好WAVEHDR结构体的字段：lpData dwBufferLength dwFlags=0
+If the method succeeds, the WHDR_PREPARED flag is set in the dwFlags member of the WAVEHDR structure.

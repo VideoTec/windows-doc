@@ -1,0 +1,12 @@
+打开 waveform 声音设备时，最后参数，有下面一个标志位
+
+WAVE_ALLOWSYNC
+If this flag is specified, a synchronous waveform-audio device can be opened. 
+If this flag is not specified while opening a synchronous driver, the device will fail to open.
+
+有什么作用？没找到确定的说明
+
+When you play a sound using playsound() or some others API calls, the 
+WAVE_ALLOWSYNC (in this case, Wave files only), forces the program continue 
+execution wheter the file playing is done or not, that is, it forces the 
+sound to be playing in the background. 

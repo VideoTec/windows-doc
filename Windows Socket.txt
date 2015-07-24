@@ -1,0 +1,12 @@
+  #include <winsock2.h> Ws2_32.lib
+  
+  WSADATA wsaData;
+  SOCKET ftp_data_socket{ INVALID_SOCKET };
+  SOCKET ftp_cmd_socket{ INVALID_SOCKET };
+  int ret = WSAStartup(MAKEWORD(2, 2), &wsaData); //WSACleanup();
+  
+  WSACleanup();
+  
+  closesocket and shutdown
+  An application should always have a matching call to closesocket for each successful call to socket to return any socket resources to the system.
+  The shutdown function does not close the socket. Any resources attached to the socket will not be freed until closesocket is invoked.

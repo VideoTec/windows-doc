@@ -1,0 +1,2 @@
+#define HR(x) if(FAILED(x)) { return x; }
+HR(m_pTexture->GetSurfaceLevel(0, &m_pTextureSurface));

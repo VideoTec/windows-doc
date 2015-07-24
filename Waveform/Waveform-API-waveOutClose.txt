@@ -1,0 +1,14 @@
+The waveOutClose function closes the given waveform-audio output device.
+
+MMRESULT waveOutClose(
+  HWAVEOUT hwo
+);
+
+---------------------------
+和其它接口的关系
+---------------------------
+The close operation fails if the device is still playing a waveform-audio buffer that was previously sent by calling waveOutWrite. 
+Before calling waveOutClose, the application must wait for all buffers to finish playing or call the waveOutReset function to terminate playback.
+
+参考
+you must wait until the driver is finished with the buffer before calling waveOutUnprepareHeader.

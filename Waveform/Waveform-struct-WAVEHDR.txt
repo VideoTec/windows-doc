@@ -1,0 +1,30 @@
+描述 PCM音频数据 结构体
+
+The WAVEHDR structure defines the header used to identify a waveform-audio buffer.
+
+typedef struct wavehdr_tag {
+  LPSTR              lpData;          Pointer to the waveform buffer.
+  DWORD              dwBufferLength;  Length, in bytes, of the buffer
+  DWORD              dwBytesRecorded; When the header is used in input, specifies how much data is in the buffer.
+  DWORD_PTR          dwUser;          User data.
+  DWORD              dwFlags;         A bitwise OR of zero of more flags. The following flags are defined:
+  DWORD              dwLoops;         Number of times to play the loop. This member is used only with output buffers.
+  struct wavehdr_tag  *lpNext;        保留
+  DWORD_PTR          reserved;        保留
+} WAVEHDR, *LPWAVEHDR;
+
+关于循环播放的问题
+Use the WHDR_BEGINLOOP and WHDR_ENDLOOP flags in the dwFlags member to specify the beginning and ending data blocks for looping. 
+To loop on a single block, specify both flags for the same block. 
+Use the dwLoops member in the WAVEHDR structure for the first block in the loop to specify the number of times to play the loop.
+
+至少设置三个字段
+The lpData, dwBufferLength, and dwFlags members must be set before calling the waveInPrepareHeader or waveOutPrepareHeader function. 
+(For either function, the dwFlags member must be set to zero.)
+
+-------------------------------------
+把 PCM 声音数据 传递给硬件驱动的载体
+-------------------------------------
+相关的两个接口
+waveOutPrepareHeader / waveOutUnprepareHeader
+waveOutWrite

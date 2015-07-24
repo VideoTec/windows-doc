@@ -1,0 +1,25 @@
+privileged[英][ˈprɪvəlɪdʒd] [美][ˈprɪvəlɪdʒd, ˈprɪvlɪdʒd]
+adj.享有特权的；特许的，专用的；秘密的，保密的；幸运的
+
+conhost 控制台窗口主机 This process runs as a system-privileged account
+csrss.exe (Client Server Runtime Process) service
+
+10:44 2015/7/3
+测试 mediadatapool 模块时， conhost csrss ，两个进程占用大量CPU，造成机器发热，风扇狂转。
+是因为大量的 printf 造成的？通过测试，确实如此
+
+http://www.howtogeek.com/howto/4996/what-is-conhost.exe-and-why-is-it-running/
+The conhost.exe process sitting in the middle between 
+CSRSS and cmd.exe 
+allows Windows to fix both of the problems in previous versions of Windows—not only do the scrollbars draw correctly, 
+but you can actually drag and drop a file from Explorer straight into the command prompt:
+
+http://baike.baidu.com/view/29432.htm
+csrss.exe通常是系统的正常进程，所在的进程文件是csrss或csrss.exe，
+是微软客户端、服务端运行时子系统，windows的核心进程之一。
+管理Windows图形相关任务，对系统的正常运行非常重要。
+
+csrss是Client/Server Runtime Server Subsystem的简称，即客户/服务器运行子系统，
+用以控制Windows图形相关子系统，必须一直运行。
+csrss用于维持Windows的控制，创建或者删除线程和一些16位的虚拟MS-DOS环境。
+也有可能是W32.Netsky.AB@mm等病毒创建的

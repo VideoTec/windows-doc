@@ -1,0 +1,70 @@
+定义了 wave-forma audio 数据格式
+
+The WAVEFORMATEX structure defines the format of waveform-audio data. 
+Only format information common to all waveform-audio data formats is included in this structure. 
+For formats that require additional information, this structure is included as the first member in another structure, along with the additional information.
+
+Formats that support more than two channels or sample sizes of more than 16 bits can be described in a WAVEFORMATEXTENSIBLE structure, 
+which includes the WAVEFORMAT structure.
+
+C:\Program Files (x86)\Windows Kits\8.1\Include\um\mmeapi.h
+/*
+ *  extended waveform format structure used for all non-PCM formats. this
+ *  structure is common to all non-PCM formats.
+ */
+typedef struct tWAVEFORMATEX
+{
+    WORD        wFormatTag;         /* format type */
+    WORD        nChannels;          /* number of channels (i.e. mono, stereo...) */
+    DWORD       nSamplesPerSec;     /* sample rate */ Sample rate, in samples per second (hertz). 44100
+    DWORD       nAvgBytesPerSec;    /* for buffer estimation */ 每秒的字节数
+    WORD        nBlockAlign;        /* block size of data */    每个样的对齐数，channel * wBitsPerSample / 8
+    WORD        wBitsPerSample;     /* number of bits per sample of mono data */ 每个样的字节数
+    WORD        cbSize;             /* the count in bytes of the size of */      后续扩展数据的大小
+                                    /* extra information (after cbSize) */
+} WAVEFORMATEX, *PWAVEFORMATEX, NEAR *NPWAVEFORMATEX, FAR *LPWAVEFORMATEX;
+
+format type
+A complete list of format tags can be found in the Mmreg.h header file
+WAVE_FORMAT_PCM
+WAVE_FORMAT_IEEE_FLOAT
+
+------------------------------------
+填充示例
+-----------------------------------
+  WAVEFORMATEX wave_format = {0};
+  
+  wave_format.wFormatTag = WAVE_FORMAT_IEEE_FLOAT;
+  wave_format.nChannels = 1;
+  wave_format.nSamplesPerSec = 44100;
+  wave_format.nAvgBytesPerSec = 44100 * 4;
+  wave_format.nBlockAlign = 4;
+  wave_format.wBitsPerSample = 32;
+  wave_format.cbSize = 0;
+
+------------------------------------
+填充示例
+-----------------------------------
+static SDL_bool
+PrepWaveFormat(_THIS, UINT devId, WAVEFORMATEX *pfmt, const int iscapture)
+{
+    SDL_zerop(pfmt);
+
+    if (SDL_AUDIO_ISFLOAT(this->spec.format)) {
+        pfmt->wFormatTag = WAVE_FORMAT_IEEE_FLOAT;
+    } else {
+        pfmt->wFormatTag = WAVE_FORMAT_PCM;
+    }
+    pfmt->wBitsPerSample = SDL_AUDIO_BITSIZE(this->spec.format);
+
+    pfmt->nChannels = this->spec.channels;
+    pfmt->nSamplesPerSec = this->spec.freq;
+    pfmt->nBlockAlign = pfmt->nChannels * (pfmt->wBitsPerSample / 8);
+    pfmt->nAvgBytesPerSec = pfmt->nSamplesPerSec * pfmt->nBlockAlign;
+
+    if (iscapture) {
+        return (waveInOpen(0, devId, pfmt, 0, 0, WAVE_FORMAT_QUERY) == 0);
+    } else {
+        return (waveOutOpen(0, devId, pfmt, 0, 0, WAVE_FORMAT_QUERY) == 0);
+    }
+}

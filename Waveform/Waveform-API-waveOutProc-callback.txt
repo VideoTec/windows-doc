@@ -1,0 +1,78 @@
+播放设备，通过回调，通知播放状态
+
+The waveOutProc function is the callback function used with the waveform-audio output device. 
+The waveOutProc function is a placeholder for the application-defined function name. 
+The address of this function can be specified in the callback-address parameter of the waveOutOpen function.
+
+void CALLBACK waveOutProc(
+  HWAVEOUT hwo,                    Handle to the waveform-audio device associated with the callback.
+  UINT uMsg,                       Waveform-audio output message WOM_CLOSE WOM_DONE WOM_OPEN
+  DWORD_PTR dwInstance,            User-instance data specified with waveOutOpen
+  DWORD_PTR dwParam1,              Message parameter.
+  DWORD_PTR dwParam2               Message parameter.
+);
+
+The meaning of the two message parameters, dwParam1 and dwParam2, depends on the message specified in uMsg. 
+The documentation for each message describes the message parameters.
+
+三个通知消息
+WOM_CLOSE	Sent when the device is closed using the waveOutClose function.
+message is sent to a waveform-audio output callback function when a waveform-audio output device is closed. 
+The device handle is no longer valid after this message has been sent.
+
+WOM_DONE	Sent when the device driver is finished with a data block sent using the waveOutWrite function.
+The WOM_DONE message is sent to a waveform-audio output callback function when the given output buffer is being returned to the application. 
+Buffers are returned to the application when they have been played, or as the result of a call to the waveOutReset function.
+dwParam1 = (DWORD) lpwvhdr  Pointer to a WAVEHDR structure identifying the buffer.
+dwParam2 = reserved 
+
+WOM_OPEN	Sent when the device is opened using the waveOutOpen function.
+The WOM_OPEN message is sent to a waveform-audio output callback function when a waveform-audio output device is opened.
+
+/* wave callback messages */
+#define WOM_OPEN        MM_WOM_OPEN
+#define WOM_CLOSE       MM_WOM_CLOSE
+#define WOM_DONE        MM_WOM_DONE
+#define WIM_OPEN        MM_WIM_OPEN
+#define WIM_CLOSE       MM_WIM_CLOSE
+#define WIM_DATA        MM_WIM_DATA
+
+#define MM_WOM_OPEN         0x3BB           /* waveform output */
+#define MM_WOM_CLOSE        0x3BC
+#define MM_WOM_DONE         0x3BD
+
+#define MM_WIM_OPEN         0x3BE           /* waveform input */
+#define MM_WIM_CLOSE        0x3BF
+#define MM_WIM_DATA         0x3C0
+-------------------------------------
+回调代码 的 注意事项
+-------------------------------------
+
+Applications should not call any system-defined functions from inside a callback function, 
+except for EnterCriticalSection, LeaveCriticalSection, midiOutLongMsg, midiOutShortMsg, OutputDebugString, PostMessage, PostThreadMessage, SetEvent, timeGetSystemTime, timeGetTime, timeKillEvent, and timeSetEvent. 
+
+Calling other wave functions will cause deadlock.
+
+-------------------------------------
+使用示例
+-------------------------------------
+E:\opensource\SDL2-2.0.3\src\audio\winmm\SDL_winmm.c
+
+/* The Win32 callback for filling the WAVE device */
+static void CALLBACK
+FillSound(HWAVEOUT hwo, UINT uMsg, DWORD_PTR dwInstance,
+          DWORD_PTR dwParam1, DWORD_PTR dwParam2)
+{
+    SDL_AudioDevice *this = (SDL_AudioDevice *) dwInstance;
+
+    /* Only service "buffer done playing" messages */
+    if (uMsg != WOM_DONE)
+        return;
+
+    /* Signal that we are done playing a buffer */
+    ReleaseSemaphore(this->hidden->audio_sem, 1, NULL);
+}
+
+result = waveOutOpen(&this->hidden->hout, devId, &waveformat,
+					 (DWORD_PTR) FillSound, (DWORD_PTR) this,
+					 CALLBACK_FUNCTION);

@@ -1,0 +1,84 @@
+打开 声音输出设备
+The waveOutOpen function opens the given waveform-audio output device for playback
+
+MMRESULT waveOutOpen(
+  LPHWAVEOUT phwo,      接收声音设备句柄
+  UINT_PTR uDeviceID,   WAVE_MAPPER  
+  LPWAVEFORMATEX pwfx,
+  DWORD_PTR dwCallback, 可能是下面的值，和 fdwOpen 参数相关
+                         A pointer to a callback function
+						 A handle to a window
+						 A thread identifier.
+						 A handle to an event.
+						 The value NULL.
+  DWORD_PTR dwCallbackInstance,  向回调传递用户自定义值
+  DWORD fdwOpen          见下解释
+);
+
+phwo 
+Pointer to a buffer that receives a handle identifying the open waveform-audio output device. 
+Use the handle to identify the device when calling other waveform-audio output functions. 
+This parameter might be NULL if the WAVE_FORMAT_QUERY flag is specified for fdwOpen.
+
+uDeviceID
+Identifier of the waveform-audio output device to open. It can be either a device identifier or a handle of an open waveform-audio input device. You can also use the following flag instead of a device identifier:
+WAVE_MAPPER		The function selects a waveform-audio output device capable of playing the given format.
+
+/* device ID for wave device mapper */
+#define WAVE_MAPPER     ((UINT)-1)
+
+pwfx
+Pointer to a WAVEFORMATEX structure that identifies the format of the waveform-audio data to be sent to the device. You can free this structure immediately after passing it to waveOutOpen.
+
+fdwOpen
+Flags for opening the device. The following values are defined.
+
+/* flags used with waveOutOpen(), waveInOpen(), midiInOpen(), and */
+/* midiOutOpen() to specify the type of the dwCallback parameter. */
+#define CALLBACK_TYPEMASK   0x00070000l    /* callback type mask */
+#define CALLBACK_NULL       0x00000000l    /* no callback */
+#define CALLBACK_WINDOW     0x00010000l    /* dwCallback is a HWND */
+#define CALLBACK_TASK       0x00020000l    /* dwCallback is a HTASK */
+#define CALLBACK_FUNCTION   0x00030000l    /* dwCallback is a FARPROC */
+#ifdef _WIN32
+#define CALLBACK_THREAD     (CALLBACK_TASK)/* thread ID replaces 16 bit task */
+#define CALLBACK_EVENT      0x00050000l    /* dwCallback is an EVENT Handle */
+#endif
+
+/* flags for dwFlags parameter in waveOutOpen() and waveInOpen() */
+#define  WAVE_FORMAT_QUERY                          0x0001  根据指定的格式查找符合的设备
+#define  WAVE_ALLOWSYNC                             0x0002   a synchronous waveform-audio device can be opened.
+
+#if (WINVER >= 0x0400)
+#define  WAVE_MAPPED                                0x0004
+                                                    the uDeviceID parameter specifies a waveform-audio device to be mapped to by the wave mapper.
+
+#define  WAVE_FORMAT_DIRECT                         0x0008  the ACM driver does not perform conversions on the audio data.
+#define  WAVE_FORMAT_DIRECT_QUERY                   (WAVE_FORMAT_QUERY | WAVE_FORMAT_DIRECT)
+
+#define  WAVE_MAPPED_DEFAULT_COMMUNICATION_DEVICE   0x0010 opens the default communication device.
+                                                    This flag applies only when uDeviceID equals WAVE_MAPPER
+													Requires Windows 7
+#endif /* (WINVER >= 0x0400) */
+
+返回值
+MMSYSERR_NOERROR
+
+------------------------------------------
+调用示例
+------------------------------------------
+  HWAVEOUT handle_waveout = 0;
+  WAVEFORMATEX wave_format = {0};
+  
+  wave_format.wFormatTag = WAVE_FORMAT_IEEE_FLOAT;
+  wave_format.nChannels = 1;
+  wave_format.nSamplesPerSec = 44100;
+  wave_format.nAvgBytesPerSec = 44100 * 4;
+  wave_format.nBlockAlign = 4;
+  wave_format.wBitsPerSample = 32;
+  wave_format.cbSize = 0;
+  MMRESULT mm_rt = waveOutOpen(&handle_waveout, WAVE_MAPPER, &wave_format, 0, 0, CALLBACK_NULL);
+  if(MMSYSERR_NOERROR != mm_rt) {
+    printf("wave out open failed!");
+    return -1;
+  }

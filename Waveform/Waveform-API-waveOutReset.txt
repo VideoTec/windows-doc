@@ -1,0 +1,14 @@
+重置，清空驱动等待播放的 buffer
+
+The waveOutReset function stops playback on the given waveform-audio output device and resets the current position to zero. 
+All pending playback buffers are marked as done (WHDR_DONE) and returned to the application.
+
+MMRESULT waveOutReset(
+  HWAVEOUT hwo
+);
+
+Returns MMSYSERR_NOERROR
+
+After this function returns, the application can 
+send new playback buffers to the device by calling waveOutWrite, or 
+close the device by calling waveOutClose

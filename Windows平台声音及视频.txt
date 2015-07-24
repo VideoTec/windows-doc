@@ -1,0 +1,32 @@
+《从SDL了解WINDOWS音视频API》
+IXAudio2 interface
+XAudio2 is a low-level audio API that provides signal processing and mixing foundation for developing high performance audio engines for games.
+XAudio 2 可以跨平台 (Windows 与 Xbox)，意图取代 DirectSound
+XAudio2 is a cross-platform API that has shipped for use on Xbox 360 as well as versions of Windows, including Windows XP, Windows Vista, Windows 7, and Windows 8.
+XAudio2 version 2.8 ships today as a system component in Windows 8, XINPUT2_8.DLL.
+All previous versions of XAudio2 for use in apps have been provided as redistributable DLLs in the DirectX SDK.
+
+DirectX Audio 和 DirectSound
+DirectSound3D（DS3D）最早是1993年与 DirectX 3 一起发表的。DirectX 8以后的DirectSound和DirectSound3D的（DS3D）被合称DirectX Audio
+C:\Users\wangxiangfx\Downloads\openal-soft-1.16.0\Alc\backends\dsound.c
+C:\Users\wangxiangfx\Downloads\SDL2-2.0.3\src\audio\directsound\SDL_directsound.c
+单独的线程播放
+IDirectSoundBuffer_Unlock(this->hidden->mixbuf, this->hidden->locked_buf, this->hidden->mixlen, NULL, 0);
+IDirectSoundBuffer_Stop(this->hidden->mixbuf);
+
+Waveform Audio  #include <mmsystem.h>
+Posts a message to 'PlaybackThreadProc' everytime a WaveOut Buffer is completed and returns to the application (for more data)
+static void CALLBACK WaveOutProc(HWAVEOUT UNUSED(device), UINT msg, DWORD_PTR instance, DWORD_PTR param1, DWORD_PTR UNUSED(param2))
+waveOutOpen(&data->WaveHandle.Out, DeviceID, &data->Format, (DWORD_PTR)&WaveOutProc, (DWORD_PTR)Device, CALLBACK_FUNCTION)
+单独的线程里，不断调用这个函数，来播放声音
+waveOutWrite(this->hidden->hout, &this->hidden->wavebuf[this->hidden->next_buffer], sizeof(this->hidden->wavebuf[0]));
+C:\Users\wangxiangfx\Downloads\SDL2-2.0.3\src\audio\winmm\SDL_winmm.c
+C:\Users\wangxiangfx\Downloads\openal-soft-1.16.0\Alc\backends\winmm.c
+
+MMDevice API
+#include <mmdeviceapi.h>
+#include <audioclient.h>
+C:\Users\wangxiangfx\Downloads\openal-soft-1.16.0\Alc\backends\mmdevapi.c
+
+#include <d3d9.h>
+#include <d3d11_1.h>
